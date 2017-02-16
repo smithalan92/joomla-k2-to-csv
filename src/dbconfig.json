@@ -1,0 +1,13 @@
+{
+    "login": {
+        "user": "",
+        "password": "",
+        "host": "",
+        "database": ""
+    },
+    "k2ItemsTable": "j251_k2_items",
+    "k2CatTable": " j251_k2_categories", 
+    "baseImgURL": "http://yoururl.com/media/k2/items/cache/",
+    "baseImgSize": "L",
+    "imgExtension": ".jpg"
+}
