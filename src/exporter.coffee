@@ -41,6 +41,7 @@ class Importer
     # recursively calls itself
     # fromId - {Number} ID to page from
     # toID - {Number} ID to page to
+    # Returns a {Promise}
     getItems: (fromID, toID, maxID) ->
         return Promise.resolve() if fromID > maxID
         return db.getItemsInIDRange fromID, toID
@@ -51,7 +52,9 @@ class Importer
         .then =>
             return @getItems fromID + 25, toID + 25, maxID
 
-
+    # Processes results retried from the database. Sets the category
+    # and image URL of each result propery
+    # Returns an {Array}
     processResults: (results) ->
         results.forEach (res) =>
             res.category = "Products|Products->#{res.catName}"
@@ -60,17 +63,20 @@ class Importer
 
         return results
 
-    getImageUrl: (imageID) ->
-        hash = crypto.createHash('md5').update("Image#{imageID}").digest("hex");
+    # Generates the URL of the image for an Item
+    # itemID - The ID of the Item
+    # Returns a {String}
+    getImageUrl: (itemID) ->
+        # K2 names images by generating a MD5 hash of Image{ItemID}
+        hash = crypto.createHash('md5').update("Image#{itemID}").digest("hex");
 
         return "#{config.baseImgURL}#{hash}_#{config.baseImgSize}#{config.imgExtension}"
 
+    # Writes an array of item objects to a CSV file
+    # items - {Array}
     writeToCSV: (items) ->
-        return new Promise (resolve, reject) =>
-            items.forEach (item) =>
-                @csvStream.write item
-
-            return resolve()
+        items.forEach (item) =>
+            @csvStream.write item
 
 
 

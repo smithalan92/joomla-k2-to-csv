@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Export Joomla K2 items to a CSV file",
   "scripts": {
-    "start": "node ./dist/start.js"
+    "start": "gulp && node ./dist/start.js"
   },
   "repository": {
     "type": "git",

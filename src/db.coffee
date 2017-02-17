@@ -3,23 +3,34 @@ squel    = require 'squel'
 dbConfig = require './dbconfig'
 Promise  = require 'bluebird'
 
+# Helper class for database functions
 class DatabaseHelper
 
     conn: null
 
+    # Opens a connection to the database
+    # Returns a Promise
     openConnection: ->
         Promise.resolve() if @conn
         return mysql.createConnection dbConfig.login
         .then (_conn) =>
             @conn = _conn
 
+    # Destroys a open db connection
     closeConnection: ->
-        return Promise.reject() unless @conn
+        return unless @conn
         @conn.destroy()
 
+    # Excecutes a database query
+    # text - {String}
+    # values - {Array}
+    # Returns a {Promise}
     runQuery: ({text, values}) ->
         return @conn.query text, values
 
+    # Gets a count of items to export
+    # only includes published items
+    # Returns a {Promise} that resolves to an {Object} or throws an error
     getTotalItemCount: ->
         query = """
             SELECT COUNT(id)
@@ -32,6 +43,9 @@ class DatabaseHelper
             throw new Error("No result") unless res.length
             return res[0]["COUNT(id)"]
 
+    # Gets a count of items to export
+    # only includes published items
+    # Returns a {Promise} that resolves to an {Object} or throws an error
     getHighestItemID: ->
         query = """
             SELECT MAX(id)
@@ -44,6 +58,10 @@ class DatabaseHelper
             throw new Error("No result") unless res.length
             return res[0]["MAX(id)"]
 
+    # Gets items in with a certain ID range
+    # min - {Number} - Min ID 
+    # max - {Number} - Max ID
+    # Returns a {Promise} that resolves to an {Array} of {Objects}
     getItemsInIDRange: (min, max) ->
         expression = squel.select()
             .from dbConfig.k2ItemsTable, "k2Items"
