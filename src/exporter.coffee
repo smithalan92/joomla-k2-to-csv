@@ -12,7 +12,7 @@ class Importer
     processItems: ->
         # Create a  csv writestream, create a fs writesteam
         @csvStream = csv.createWriteStream {headers: true}
-        fileName = "K2Export-#{moment().format("DD-MM-YYYY-HHmmss")}.csv"
+        fileName = "WCExport-#{moment().format("DD-MM-YYYY-HHmmss")}.csv"
         writeableStream = fs.createWriteStream(fileName)
         # Pipe our csv stream to the fs stream
         @csvStream.pipe writeableStream
@@ -44,33 +44,13 @@ class Importer
     # Returns a {Promise}
     getItems: (fromID, toID, maxID) ->
         return Promise.resolve() if fromID > maxID
+        console.log "Getting any items with IDs between #{fromID} and #{toID} from Database"
         return db.getItemsInIDRange fromID, toID
         .then (res) =>
-            return @processResults res
-        .then (res) =>
+            console.log "Writing any items with IDs between #{fromID} and #{toID} to CSV"
             return @writeToCSV res
         .then =>
             return @getItems fromID + 25, toID + 25, maxID
-
-    # Processes results retried from the database. Sets the category
-    # and image URL of each result propery
-    # Returns an {Array}
-    processResults: (results) ->
-        results.forEach (res) =>
-            res.category = "Products|Products->#{res.catName}"
-            delete res["catName"]
-            res.image = @getImageUrl res.id
-
-        return results
-
-    # Generates the URL of the image for an Item
-    # itemID - The ID of the Item
-    # Returns a {String}
-    getImageUrl: (itemID) ->
-        # K2 names images by generating a MD5 hash of Image{ItemID}
-        hash = crypto.createHash('md5').update("Image#{itemID}").digest("hex");
-
-        return "#{config.baseImgURL}#{hash}_#{config.baseImgSize}#{config.imgExtension}"
 
     # Writes an array of item objects to a CSV file
     # items - {Array}

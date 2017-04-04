@@ -33,15 +33,16 @@ class DatabaseHelper
     # Returns a {Promise} that resolves to an {Object} or throws an error
     getTotalItemCount: ->
         query = """
-            SELECT COUNT(id)
-            FROM #{dbConfig.k2ItemsTable}
-            WHERE published = 1
+            SELECT COUNT(id) as count
+            FROM #{dbConfig.wcItemsTable}
+            WHERE post_status = 'publish'
+            AND post_type IN ('product', 'variable_product')
             """
 
         return @runQuery {text: query}
         .then (res) ->
             throw new Error("No result") unless res.length
-            return res[0]["COUNT(id)"]
+            return res[0].count
 
     # Gets a count of items to export
     # only includes published items
@@ -49,8 +50,9 @@ class DatabaseHelper
     getHighestItemID: ->
         query = """
             SELECT MAX(id)
-            FROM #{dbConfig.k2ItemsTable}
-            WHERE published = 1
+            FROM #{dbConfig.wcItemsTable}
+            WHERE post_status = 'publish'
+            AND post_type IN ('product', 'variable_product')
             """
 
         return @runQuery {text: query}
@@ -64,15 +66,25 @@ class DatabaseHelper
     # Returns a {Promise} that resolves to an {Array} of {Objects}
     getItemsInIDRange: (min, max) ->
         expression = squel.select()
-            .from dbConfig.k2ItemsTable, "k2Items"
-            .field 'k2Items.id'
-            .field 'k2Items.title AS product_title'
-            .field 'k2Items.introtext as product_desc'
-            .field 'k2Cats.name AS catName' 
-            .where 'k2Items.id BETWEEN ? and ?', min, max
-            .where 'k2Items.published = 1'
-            .right_join dbConfig.k2CatTable, "k2Cats", "k2Cats.id = k2Items.catID" 
+            .from dbConfig.wcItemsTable, "p"
+            .field 'p.ID'
+            .field 'p.post_title AS name'
+            .field 'p.post_content AS full_description'
+            .field 'p.post_excerpt AS short_description'
+            .field 'pm1.meta_value AS price'
+            .field 'pm3.meta_value AS sku'
+            .field 'p2.guid AS image'
+            .left_join dbConfig.wcMetadataTable, 'pm1', "p.ID = pm1.post_id AND pm1.meta_key = '_regular_price'"
+            .left_join dbConfig.wcMetadataTable, 'pm2', "p.ID = pm2.post_id AND pm2.meta_key = '_thumbnail_id'"
+            .left_join dbConfig.wcMetadataTable, 'pm3', "p.ID = pm3.post_id AND pm3.meta_key = '_sku'"
+            .left_join dbConfig.wcItemsTable, 'p2', "p2.ID = pm2.meta_value"
+            .where "p.id >= ?", min
+            .where "p.id <= ?", max
+            .where "p.post_status = ?", "publish"
+            .where "p.post_type IN ?", ['product', 'variable_product']
 
         return @runQuery expression.toParam()
+        .then (res) ->
+            return res
 
 module.exports = new DatabaseHelper()
